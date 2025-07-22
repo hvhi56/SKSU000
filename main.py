@@ -38,7 +38,7 @@ def num_to_hebrew_words(hour, minute):
     }
 
     minutes_map = {
-        0: "אפס", 1: "ודקה", 2: "ושתי דקות", 3: "ושלוש דקות", 4: "וארבע דקות", 5: "וחמש דקות",
+        0: "", 1: "ודקה", 2: "ושתי דקות", 3: "ושלוש דקות", 4: "וארבע דקות", 5: "וחמש דקות",
         6: "ושש דקות", 7: "ושבע דקות", 8: "ושמונה דקות", 9: "ותשע דקות", 10: "ועשרה",
         11: "ואחת עשרה דקות", 12: "ושתים עשרה דקות", 13: "ושלוש עשרה דקות", 14: "וארבע עשרה דקות",
         15: "ורבע", 16: "ושש עשרה דקות", 17: "ושבע עשרה דקות", 18: "ושמונה עשרה דקות",
@@ -72,6 +72,9 @@ def clean_text(text):
         "t.me/hamoked_il",
         "בטלגרם",
         "חדשות המוקד",
+        "לכל העדכונים, ולכתבות נוספות הצטרפו לערוץ דרך הקישור",
+        "לכל העדכונים",
+        "להצטרפות מלאה לקבוצה לחצו על הצטרף",
     ], key=len, reverse=True)
 
     # הסרת ביטויים קבועים
@@ -95,7 +98,7 @@ def create_full_text(text):
     tz = pytz.timezone('Asia/Jerusalem')
     now = datetime.now(tz)
     hebrew_time = num_to_hebrew_words(now.hour, now.minute)
-    return f"{hebrew_time} ביְשִׁיבֶה-זוֹכֶערְ. {text}"
+    return f"{hebrew_time} במבזקים-פלוס. {text}"
 
 # 🎤 יצירת MP3 עם Google TTS
 def text_to_mp3(text, filename='output.mp3'):
