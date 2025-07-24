@@ -64,7 +64,6 @@ def num_to_hebrew_words(hour, minute):
 def clean_text(text):
     import re
 
-    # רשימת ביטויים להסרה מהטקסט - מהארוך לקצר
     BLOCKED_PHRASES = sorted([
         "חדשות המוקד • בטלגרם: t.me/hamoked_il",
         "בוואטסאפ: https://chat.whatsapp.com/LoxVwdYOKOAH2y2kaO8GQ7",
@@ -77,63 +76,46 @@ def clean_text(text):
         "להצטרפות מלאה לקבוצה לחצו על הצטרף",
     ], key=len, reverse=True)
 
-    # הסרת ביטויים קבועים
     for phrase in BLOCKED_PHRASES:
         text = text.replace(phrase, '')
 
-    # הסרת קישורים
     text = re.sub(r'https?://\S+', '', text)
     text = re.sub(r'www\.\S+', '', text)
-
-    # הסרת אמוג'ים (תווים שאינם אותיות, ספרות, סימני פיסוק או עברית)
     text = re.sub(r'[^\w\s.,!?()\u0590-\u05FF]', '', text)
-
-    # ניקוי רווחים מיותרים
     text = re.sub(r'\s+', ' ', text).strip()
 
     return text
 
-# 🧠 יוצר טקסט מלא כולל שעה
+# ✅ שינוי: החזרת טקסט נקי בלבד ללא שעה וכותרת
 def create_full_text(text):
-    tz = pytz.timezone('Asia/Jerusalem')
-    now = datetime.now(tz)
-    hebrew_time = num_to_hebrew_words(now.hour, now.minute)
-    return f"{hebrew_time} במבזקים-פלוס. {text}"
+    return text
 
-# 🎤 יצירת MP3 עם Google TTS
 def text_to_mp3(text, filename='output.mp3'):
     client = texttospeech.TextToSpeechClient()
-
     synthesis_input = texttospeech.SynthesisInput(text=text)
-
     voice = texttospeech.VoiceSelectionParams(
         language_code="he-IL",
         name="he-IL-Wavenet-B",
         ssml_gender=texttospeech.SsmlVoiceGender.MALE
     )
-
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
         speaking_rate=1.2
     )
-
     response = client.synthesize_speech(
         input=synthesis_input,
         voice=voice,
         audio_config=audio_config
     )
-
     with open(filename, "wb") as out:
         out.write(response.audio_content)
 
-# 🎧 המרה ל־WAV בפורמט ימות
 def convert_to_wav(input_file, output_file='output.wav'):
     subprocess.run([
         'ffmpeg', '-i', input_file, '-ar', '8000', '-ac', '1', '-f', 'wav',
         output_file, '-y'
     ])
 
-# 📤 העלאה לשלוחה
 def upload_to_ymot(wav_file_path):
     url = 'https://call2all.co.il/ym/api/UploadFile'
     with open(wav_file_path, 'rb') as f:
@@ -147,7 +129,6 @@ def upload_to_ymot(wav_file_path):
         response = requests.post(url, data=data, files=files)
     print("📞 תגובת ימות:", response.text)
 
-# 📥 טיפול בהודעות
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if not message:
@@ -156,7 +137,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = message.text or message.caption
     has_video = message.video is not None
 
-    # ⬅️ שלב 1: קודם מעלים את הווידאו (כדי שיושמע אחרי)
     if has_video:
         video_file = await message.video.get_file()
         await video_file.download_to_drive("video.mp4")
@@ -165,7 +145,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove("video.mp4")
         os.remove("video.wav")
 
-    # ⬅️ שלב 2: עכשיו מעלים את הטקסט (כדי שיושמע ראשון)
     if text:
         cleaned = clean_text(text)
         full_text = create_full_text(cleaned)
@@ -175,11 +154,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove("output.mp3")
         os.remove("output.wav")
 
-# ♻️ שמירה על חיים (Render)
 from keep_alive import keep_alive
 keep_alive()
 
-# ▶️ הפעלת הבוט
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(MessageHandler(filters.ALL & (~filters.COMMAND), handle_message))
 
