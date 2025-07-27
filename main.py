@@ -62,8 +62,6 @@ def num_to_hebrew_words(hour, minute):
     return f"{hours_map[hour_12]} {minutes_map[minute]}"
 
 def clean_text(text):
-    import re
-
     BLOCKED_PHRASES = sorted([
         "חדשות המוקד • בטלגרם: t.me/hamoked_il",
         "בוואטסאפ: https://chat.whatsapp.com/LoxVwdYOKOAH2y2kaO8GQ7",
@@ -86,7 +84,6 @@ def clean_text(text):
 
     return text
 
-# ✅ שינוי: החזרת טקסט נקי בלבד ללא שעה וכותרת
 def create_full_text(text):
     return text
 
@@ -129,7 +126,6 @@ def upload_to_ymot(wav_file_path):
         response = requests.post(url, data=data, files=files)
     print("📞 תגובת ימות:", response.text)
 
-# 📥 טיפול בהודעות מערוץ
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.channel_post
     if not message:
@@ -139,7 +135,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     has_video = message.video is not None
     has_audio = message.audio is not None or message.voice is not None
 
-    # ❗️ דילוג על הודעות עם קישורים לא מאושרים
     ALLOWED_LINKS = [
         "t.me/hamoked_il",
         "https://chat.whatsapp.com/LoxVwdYOKOAH2y2kaO8GQ7"
@@ -149,7 +144,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print("⛔️ קישור לא מאושר – ההודעה לא תועלה לשלוחה.")
             return
 
-    # ⬅️ שלב 1: קובץ מדיה – קודם (וידאו או אודיו)
+    # וידאו
     if has_video:
         video_file = await message.video.get_file()
         await video_file.download_to_drive("video.mp4")
@@ -158,6 +153,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove("video.mp4")
         os.remove("media.wav")
 
+    # אודיו
     elif has_audio:
         audio_file = await (message.audio or message.voice).get_file()
         await audio_file.download_to_drive("audio.ogg")
@@ -166,6 +162,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove("audio.ogg")
         os.remove("media.wav")
 
+    # טקסט
     if text:
         cleaned = clean_text(text)
         full_text = create_full_text(cleaned)
