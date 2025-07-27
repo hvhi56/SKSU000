@@ -129,21 +129,42 @@ def upload_to_ymot(wav_file_path):
         response = requests.post(url, data=data, files=files)
     print("📞 תגובת ימות:", response.text)
 
+# 📥 טיפול בהודעות מערוץ
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message
+    message = update.channel_post
     if not message:
         return
 
     text = message.text or message.caption
     has_video = message.video is not None
+    has_audio = message.audio is not None or message.voice is not None
 
+    # ❗️ דילוג על הודעות עם קישורים לא מאושרים
+    ALLOWED_LINKS = [
+        "t.me/hamoked_il",
+        "https://chat.whatsapp.com/LoxVwdYOKOAH2y2kaO8GQ7"
+    ]
+    if text and any(re.search(r'https?://\S+|www\.\S+', part) for part in text.split()):
+        if not any(link in text for link in ALLOWED_LINKS):
+            print("⛔️ קישור לא מאושר – ההודעה לא תועלה לשלוחה.")
+            return
+
+    # ⬅️ שלב 1: קובץ מדיה – קודם (וידאו או אודיו)
     if has_video:
         video_file = await message.video.get_file()
         await video_file.download_to_drive("video.mp4")
-        convert_to_wav("video.mp4", "video.wav")
-        upload_to_ymot("video.wav")
+        convert_to_wav("video.mp4", "media.wav")
+        upload_to_ymot("media.wav")
         os.remove("video.mp4")
-        os.remove("video.wav")
+        os.remove("media.wav")
+
+    elif has_audio:
+        audio_file = await (message.audio or message.voice).get_file()
+        await audio_file.download_to_drive("audio.ogg")
+        convert_to_wav("audio.ogg", "media.wav")
+        upload_to_ymot("media.wav")
+        os.remove("audio.ogg")
+        os.remove("media.wav")
 
     if text:
         cleaned = clean_text(text)
