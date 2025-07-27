@@ -136,6 +136,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = message.text or message.caption
     has_video = message.video is not None
+    has_audio = message.voice or message.audio  # ✅ תוספת: גם אודיו
 
     if has_video:
         video_file = await message.video.get_file()
@@ -144,6 +145,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         upload_to_ymot("video.wav")
         os.remove("video.mp4")
         os.remove("video.wav")
+
+    if has_audio:
+        audio_file = await (message.voice or message.audio).get_file()
+        await audio_file.download_to_drive("audio.ogg")
+        convert_to_wav("audio.ogg", "audio.wav")
+        upload_to_ymot("audio.wav")
+        os.remove("audio.ogg")
+        os.remove("audio.wav")
 
     if text:
         cleaned = clean_text(text)
